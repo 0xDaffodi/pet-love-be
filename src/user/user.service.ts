@@ -5,15 +5,22 @@ import { User } from './entities/user.entity';
 import { Signup, UpdateReceiveEmail, CreatePet } from './schema/user.schema';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { OAuth2Client } from 'google-auth-library';
-import { promises as fs } from 'fs';
 import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { Express } from 'express';
+import * as fs from 'fs';
+import { Pet } from './entities/pet.entity';
+
+
+
 
 @Injectable()
 export class UserService {
     constructor(
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
+        @InjectRepository(Pet)
+        private readonly petRepository: Repository<Pet>,
     ) {}
 
     async signup(user: Signup) {
@@ -59,35 +66,39 @@ export class UserService {
         return { updateReceiveEmail: user.receiveEmail }
     }
 
-    async createPet(pet: CreatePet) {
+    async createPet(pet: CreatePet, files: Express.Multer.File[]) {
         // 判断是否存储该用户的存储folder
         const user = await this.encryptGoogleJwtToken(pet.credential)
         const folderName = user.email;
         const folderPath = path.join(__dirname, '..', '..', 'pics', folderName);
-        console.log(folderName);
-        console.log(folderPath);
-        try {
-            await fs.access(folderPath);
-            console.log('Folder exists');
-        } catch (error) {
-            console.log('Folder does not exist');
+        if (!fs.existsSync(folderPath)) {
+            fs.mkdirSync(folderPath, { recursive: true });
         }
         // 上传图片存储在服务器上。仅存储付费用户的宠物图片
-
+        const uploadedFiles = files.map(file => {
+            const uniqueFilename = `${Date.now()}-${file.originalname}`;
+            const filePath = path.join(folderPath, uniqueFilename);
+            fs.writeFileSync(filePath, file.buffer);
+        })
         // 选择性格
 
         // 保存宠物
+        const newPet = await this.petRepository.create({
+            owner: user.email,
+            name: pet.name,
+        })
+        await this.petRepository.save(newPet);
     }
     async getPet() {
 
     }
 
-    async uploadPetPhotos() {
+
+    async subscriptionStatus() {
 
     }
-    async updatePetCharacter() {
 
-    }
+    
     
     
 

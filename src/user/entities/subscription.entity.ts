@@ -1,7 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
-@Entity('pet')
-export class Pet {
+@Entity('subscription')
+export class Subscription {
     @PrimaryGeneratedColumn()
     id: number;
 
@@ -9,5 +9,8 @@ export class Pet {
     owner: string;
 
     @Column()
-    name: string;
+    subscriptionType: number;
+
+    @Column()
+    endDate: Date;
 }

@@ -10,5 +10,8 @@ export class User {
 
   @Column()
   receiveEmail: string
+
+  @Column()
+  cardNumber: string;
   
 }
